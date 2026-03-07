@@ -15,7 +15,7 @@
 body {
   margin: 0;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #eef2ff, #f8fafc);
+  background: #BCFCBF;
   color: var(--text);
 }
 
