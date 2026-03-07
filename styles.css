@@ -140,8 +140,11 @@ button#reset {
 
 .arrow-layer {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  height: 100%;
   pointer-events: none;
+  overflow: visible;
 }
 
 .skip-arrow {

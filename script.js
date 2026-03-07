@@ -80,6 +80,9 @@ function renderStaticLine() {
 
   const width = toX(config.max) + VISIBLE_MARGIN;
   track.style.width = `${width}px`;
+  arrowLayer.setAttribute("width", String(width));
+  arrowLayer.setAttribute("height", String(viewport.clientHeight));
+  arrowLayer.setAttribute("viewBox", `0 0 ${width} ${viewport.clientHeight}`);
 }
 
 function clearAnimation() {
