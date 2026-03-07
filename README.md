@@ -5,6 +5,7 @@ A small classroom-friendly JavaScript activity that animates skip counting on a 
 ## Features
 
 - Set **start**, **end**, **skip amount**, and animation **speed**.
+- Shows **every integer** on the number line between start and end.
 - Shows a side-scrolling number line so learners focus on the current region.
 - Draws a curved arrow for each skip to make jumps visible.
 - Pause, resume, and reset controls.

@@ -15,6 +15,7 @@ const resetBtn = document.getElementById("reset");
 
 let timer = null;
 let sequence = [];
+let numberLineValues = [];
 let currentIndex = 0;
 let isPaused = false;
 let config = null;
@@ -55,7 +56,7 @@ function renderStaticLine() {
   base.className = "baseline";
   track.appendChild(base);
 
-  sequence.forEach((value) => {
+  numberLineValues.forEach((value) => {
     const x = toX(value);
 
     const tick = document.createElement("div");
@@ -179,6 +180,12 @@ function configureAndRender() {
     min: Math.min(...sequence),
     max: Math.max(...sequence),
   };
+
+  const direction = start <= end ? 1 : -1;
+  numberLineValues = [];
+  for (let value = start; direction > 0 ? value <= end : value >= end; value += direction) {
+    numberLineValues.push(value);
+  }
 
   currentIndex = 0;
   clearAnimation();
