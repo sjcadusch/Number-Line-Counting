@@ -41,7 +41,7 @@ function setupArrowDefs() {
   arrowLayer.innerHTML = `
     <defs>
       <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-        <path d="M0,0 L10,4 L0,8 Z" fill="#1d4ed8"></path>
+        <path d="M0,0 L10,4 L0,8 Z" fill="#d81d33"></path>
       </marker>
     </defs>
   `;
