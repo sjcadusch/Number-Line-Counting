@@ -108,8 +108,8 @@ function addArrow(fromValue, toValue) {
   const toXValue = toX(toValue);
   const center = (fromX + toXValue) / 2;
   const distance = Math.abs(toXValue - fromX);
-  const arcHeight = Math.max(40, Math.min(130, distance * 0.45));
-  const y = 100;
+  const arcHeight = Math.max(16, Math.min(48, distance * 0.18));
+  const y = 176;
 
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("class", "skip-arrow");
