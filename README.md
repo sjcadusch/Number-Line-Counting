@@ -1,21 +1,36 @@
-# Skip Counting Number Line
+# Classroom Math Activities
 
-A small classroom-friendly JavaScript activity that animates skip counting on a scrolling number line.
+This repository now contains **two separate JavaScript projects**:
 
-## Features
+1. **Skip Counting Number Line** (original project, kept at the repo root)
+2. **Multiplication Facts Player** (new project in `multiplication-facts/`)
 
-- Set **start**, **end**, **skip amount**, and animation **speed**.
-- Shows **every integer** on the number line between start and end.
-- Shows a side-scrolling number line so learners focus on the current region.
-- Draws a curved arrow for each skip to make jumps visible.
-- Pause, resume, and reset controls.
+## 1) Skip Counting Number Line
 
-## Run locally
+Files:
+- `index.html`
+- `script.js`
+- `styles.css`
 
-Open `index.html` directly in a browser, or serve this folder with any static file server:
+Run from repo root:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then visit <http://localhost:8000>.
+Then open <http://localhost:8000>.
+
+## 2) Multiplication Facts Player
+
+Files:
+- `multiplication-facts/index.html`
+- `multiplication-facts/script.js`
+- `multiplication-facts/styles.css`
+
+Run from repo root:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open <http://localhost:8000/multiplication-facts/>.
