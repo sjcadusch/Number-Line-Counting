@@ -1,8 +1,11 @@
-# Skip Counting Number Line
+# Classroom Math Activities
 
 This repository is for the **Skip Counting Number Line** project.
 
-## Run locally
+Files:
+- `index.html`
+- `script.js`
+- `styles.css`
 
 ```bash
 python3 -m http.server 8000
