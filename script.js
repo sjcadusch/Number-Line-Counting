@@ -1,236 +1,111 @@
-const PIXELS_PER_UNIT = 56;
-const VISIBLE_MARGIN = 180;
+const PIXELS_PER_MAJOR = 160;
+const SIDE_PADDING = 56;
+const EPSILON = 1e-9;
 
 const form = document.getElementById("controls");
 const startInput = document.getElementById("start");
 const endInput = document.getElementById("end");
-const stepInput = document.getElementById("step");
-const speedInput = document.getElementById("speed");
+const majorStepInput = document.getElementById("majorStep");
+const minorDivisionsSelect = document.getElementById("minorDivisions");
 const statusEl = document.getElementById("status");
 const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
-const arrowLayer = document.getElementById("arrowLayer");
-const pauseBtn = document.getElementById("pause");
-const resetBtn = document.getElementById("reset");
 
-let timer = null;
-let sequence = [];
-let numberLineValues = [];
-let currentIndex = 0;
-let isPaused = false;
-let config = null;
-
-function buildSequence(start, end, step) {
-  if (step <= 0) {
-    return [];
+function formatNumber(value) {
+  if (Math.abs(value) < EPSILON) {
+    return "0";
   }
 
-  const values = [start];
-  let current = start;
-  const limit = start <= end ? (value) => value + step <= end : (value) => value - step >= end;
+  const rounded = Math.round(value * 1000) / 1000;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(3).replace(/\.?0+$/, "");
+}
 
-  while (limit(current)) {
-    current = start <= end ? current + step : current - step;
-    values.push(current);
+function divisionName(count) {
+  return { 2: "halves", 5: "fifths", 10: "tenths" }[count] ?? `${count} parts`;
+}
+
+function createDiv(className, styles = {}, textContent = "") {
+  const element = document.createElement("div");
+  element.className = className;
+  Object.assign(element.style, styles);
+  if (textContent) {
+    element.textContent = textContent;
   }
-
-  return values;
+  return element;
 }
 
-function setupArrowDefs() {
-  arrowLayer.innerHTML = `
-    <defs>
-      <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-        <path d="M0,0 L10,4 L0,8 Z" fill="#d81d33"></path>
-      </marker>
-    </defs>
-  `;
-}
+function renderNumberLine(start, end, majorStep, minorDivisions) {
+  const minValue = Math.min(start, end);
+  const maxValue = Math.max(start, end);
+  const displayMin = minValue - majorStep;
+  const displayMax = maxValue + majorStep;
+  const totalMajorSegments = (displayMax - displayMin) / majorStep;
+  const minorStep = majorStep / minorDivisions;
+  const width = totalMajorSegments * PIXELS_PER_MAJOR + SIDE_PADDING * 2;
+  const baselineY = 170;
 
-function toX(value) {
-  return (value - config.min) * PIXELS_PER_UNIT + VISIBLE_MARGIN;
-}
+  track.innerHTML = "";
+  track.style.width = `${width}px`;
 
-function renderStaticLine() {
-  const base = document.createElement("div");
-  base.className = "baseline";
-  track.appendChild(base);
+  const baseline = createDiv("baseline", {
+    left: `${SIDE_PADDING}px`,
+    width: `${width - SIDE_PADDING * 2}px`,
+    top: `${baselineY}px`,
+  });
+  track.appendChild(baseline);
 
-  numberLineValues.forEach((value) => {
-    const x = toX(value);
+  const leftArrow = createDiv("arrow arrow-left", { left: `${SIDE_PADDING - 2}px`, top: `${baselineY - 8}px` });
+  const rightArrow = createDiv("arrow arrow-right", { left: `${width - SIDE_PADDING - 14}px`, top: `${baselineY - 8}px` });
+  track.append(leftArrow, rightArrow);
 
-    const tick = document.createElement("div");
-    tick.className = "tick";
-    tick.style.left = `${x}px`;
+  for (let value = displayMin; value <= displayMax + EPSILON; value += minorStep) {
+    const normalizedValue = Math.round(value / minorStep) * minorStep;
+    const offset = ((normalizedValue - displayMin) / majorStep) * PIXELS_PER_MAJOR + SIDE_PADDING;
+    const majorIndex = (normalizedValue - displayMin) / majorStep;
+    const isMajorTick = Math.abs(majorIndex - Math.round(majorIndex)) < 1e-7;
+    const tick = createDiv(isMajorTick ? "tick major" : "tick minor", { left: `${offset}px` });
     track.appendChild(tick);
 
-    const label = document.createElement("div");
-    label.className = "label";
-    label.dataset.value = String(value);
-    label.style.left = `${x}px`;
-    label.textContent = value;
-    track.appendChild(label);
+    if (isMajorTick) {
+      const isWithinLabelRange = normalizedValue >= minValue - EPSILON && normalizedValue <= maxValue + EPSILON;
+      if (isWithinLabelRange) {
+        const label = createDiv("label", { left: `${offset}px` }, formatNumber(normalizedValue));
+        track.appendChild(label);
+      }
+    }
+  }
+
+  const zeroInRange = displayMin <= 0 && displayMax >= 0;
+  if (zeroInRange) {
+    const zeroOffset = ((0 - displayMin) / majorStep) * PIXELS_PER_MAJOR + SIDE_PADDING;
+    const zeroMarker = createDiv("zero-marker", { left: `${zeroOffset}px` });
+    track.appendChild(zeroMarker);
+  }
+
+  statusEl.textContent = `Showing ${formatNumber(minValue)} to ${formatNumber(maxValue)} with major divisions of ${formatNumber(majorStep)} and minor ${divisionName(minorDivisions)}.`;
+
+  requestAnimationFrame(() => {
+    const startOffset = ((minValue - displayMin) / majorStep) * PIXELS_PER_MAJOR;
+    const centerTarget = Math.max(0, startOffset + SIDE_PADDING - viewport.clientWidth / 2);
+    viewport.scrollTo({ left: centerTarget, behavior: "smooth" });
   });
-
-  const counter = document.createElement("div");
-  counter.id = "counter";
-  counter.className = "counter";
-  counter.textContent = "Step 0";
-  track.appendChild(counter);
-
-  const width = toX(config.max) + VISIBLE_MARGIN;
-  track.style.width = `${width}px`;
-  arrowLayer.setAttribute("width", String(width));
-  arrowLayer.setAttribute("height", String(viewport.clientHeight));
-  arrowLayer.setAttribute("viewBox", `0 0 ${width} ${viewport.clientHeight}`);
 }
 
-function clearAnimation() {
-  track.innerHTML = "";
-  setupArrowDefs();
-  [...arrowLayer.querySelectorAll("path.skip-arrow")].forEach((node) => node.remove());
-}
+function handleSubmit(event) {
+  event.preventDefault();
 
-function highlightValue(value) {
-  const labels = [...track.querySelectorAll(".label")];
-  labels.forEach((label) => {
-    label.classList.toggle("active", Number(label.dataset.value) === value);
-  });
-
-  const counter = document.getElementById("counter");
-  if (counter) {
-    counter.textContent = `Step ${currentIndex}: ${value}`;
-  }
-}
-
-function addArrow(fromValue, toValue) {
-  const fromX = toX(fromValue);
-  const toXValue = toX(toValue);
-  const center = (fromX + toXValue) / 2;
-  const distance = Math.abs(toXValue - fromX);
-  const arcHeight = Math.max(40, Math.min(130, distance * 0.45));
-  const y = 176;
-
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("class", "skip-arrow");
-  path.setAttribute("d", `M ${fromX} ${y} Q ${center} ${y - arcHeight} ${toXValue} ${y}`);
-  arrowLayer.appendChild(path);
-}
-
-function centerOn(value) {
-  const x = toX(value);
-  const target = Math.max(0, x - viewport.clientWidth / 2);
-  viewport.scrollTo({ left: target, behavior: "smooth" });
-}
-
-function tick() {
-  if (currentIndex >= sequence.length) {
-    statusEl.textContent = "Done! Press Play to run again.";
-    stopTimer();
-    return;
-  }
-
-  const currentValue = sequence[currentIndex];
-  highlightValue(currentValue);
-  centerOn(currentValue);
-
-  if (currentIndex > 0) {
-    addArrow(sequence[currentIndex - 1], currentValue);
-  }
-
-  statusEl.textContent = `Counting by ${config.step}: now on ${currentValue}`;
-  currentIndex += 1;
-}
-
-function stopTimer() {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
-}
-
-function play() {
-  if (!sequence.length) {
-    return;
-  }
-
-  stopTimer();
-  isPaused = false;
-  pauseBtn.textContent = "Pause";
-  tick();
-  timer = setInterval(tick, config.speed);
-}
-
-function configureAndRender() {
   const start = Number(startInput.value);
   const end = Number(endInput.value);
-  const step = Number(stepInput.value);
-  const speed = Math.max(150, Number(speedInput.value) || 850);
+  const majorStep = Number(majorStepInput.value);
+  const minorDivisions = Number(minorDivisionsSelect.value);
 
-  sequence = buildSequence(start, end, Math.abs(step));
-
-  if (sequence.length < 2) {
-    statusEl.textContent = "Please choose values that produce at least 2 jumps.";
-    clearAnimation();
-    return false;
-  }
-
-  config = {
-    start,
-    end,
-    step: Math.abs(step),
-    speed,
-    min: Math.min(...sequence),
-    max: Math.max(...sequence),
-  };
-
-  const direction = start <= end ? 1 : -1;
-  numberLineValues = [];
-  for (let value = start; direction > 0 ? value <= end : value >= end; value += direction) {
-    numberLineValues.push(value);
-  }
-
-  currentIndex = 0;
-  clearAnimation();
-  renderStaticLine();
-  centerOn(sequence[0]);
-  return true;
-}
-
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const ok = configureAndRender();
-  if (ok) {
-    play();
-  }
-});
-
-pauseBtn.addEventListener("click", () => {
-  if (!sequence.length) {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(majorStep) || majorStep <= 0) {
+    statusEl.textContent = "Please enter valid numbers, and make sure the major division is greater than zero.";
     return;
   }
 
-  if (!isPaused) {
-    stopTimer();
-    isPaused = true;
-    pauseBtn.textContent = "Resume";
-    statusEl.textContent = "Paused.";
-  } else {
-    isPaused = false;
-    pauseBtn.textContent = "Pause";
-    timer = setInterval(tick, config.speed);
-    statusEl.textContent = "Resumed.";
-  }
-});
+  renderNumberLine(start, end, majorStep, minorDivisions);
+}
 
-resetBtn.addEventListener("click", () => {
-  stopTimer();
-  currentIndex = 0;
-  isPaused = false;
-  pauseBtn.textContent = "Pause";
-  const ok = configureAndRender();
-  statusEl.textContent = ok ? "Reset complete. Press Play to begin." : statusEl.textContent;
-});
-
-setupArrowDefs();
-configureAndRender();
+form.addEventListener("submit", handleSubmit);
+renderNumberLine(Number(startInput.value), Number(endInput.value), Number(majorStepInput.value), Number(minorDivisionsSelect.value));
