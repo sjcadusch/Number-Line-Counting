@@ -1,111 +1,157 @@
-const PIXELS_PER_MAJOR = 160;
-const SIDE_PADDING = 56;
-const EPSILON = 1e-9;
-
+const factCheckboxes = document.getElementById("factCheckboxes");
 const form = document.getElementById("controls");
-const startInput = document.getElementById("start");
-const endInput = document.getElementById("end");
-const majorStepInput = document.getElementById("majorStep");
-const minorDivisionsSelect = document.getElementById("minorDivisions");
+const speedInput = document.getElementById("speed");
+const orderInput = document.getElementById("order");
 const statusEl = document.getElementById("status");
-const viewport = document.getElementById("viewport");
-const track = document.getElementById("track");
+const factsBody = document.getElementById("factsBody");
+const pauseBtn = document.getElementById("pause");
+const resetBtn = document.getElementById("reset");
 
-function formatNumber(value) {
-  if (Math.abs(value) < EPSILON) {
-    return "0";
+let queue = [];
+let timer = null;
+let isPaused = false;
+let index = 0;
+let speed = 900;
+
+function buildCheckboxes() {
+  for (let fact = 1; fact <= 12; fact += 1) {
+    const label = document.createElement("label");
+    label.className = "fact-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = String(fact);
+    input.checked = fact === 2;
+
+    const text = document.createElement("span");
+    text.textContent = String(fact);
+
+    label.append(input, text);
+    factCheckboxes.appendChild(label);
+  }
+}
+
+function shuffle(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function getSelectedFacts() {
+  return [...factCheckboxes.querySelectorAll("input:checked")].map((node) => Number(node.value));
+}
+
+function buildQueue(selectedFacts, order) {
+  const multipliers = [...Array(13)].map((_, i) => i);
+  if (order === "backward") {
+    multipliers.reverse();
   }
 
-  const rounded = Math.round(value * 1000) / 1000;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(3).replace(/\.?0+$/, "");
-}
-
-function divisionName(count) {
-  return { 2: "halves", 5: "fifths", 10: "tenths" }[count] ?? `${count} parts`;
-}
-
-function createDiv(className, styles = {}, textContent = "") {
-  const element = document.createElement("div");
-  element.className = className;
-  Object.assign(element.style, styles);
-  if (textContent) {
-    element.textContent = textContent;
-  }
-  return element;
-}
-
-function renderNumberLine(start, end, majorStep, minorDivisions) {
-  const minValue = Math.min(start, end);
-  const maxValue = Math.max(start, end);
-  const displayMin = minValue - majorStep;
-  const displayMax = maxValue + majorStep;
-  const totalMajorSegments = (displayMax - displayMin) / majorStep;
-  const minorStep = majorStep / minorDivisions;
-  const width = totalMajorSegments * PIXELS_PER_MAJOR + SIDE_PADDING * 2;
-  const baselineY = 170;
-
-  track.innerHTML = "";
-  track.style.width = `${width}px`;
-
-  const baseline = createDiv("baseline", {
-    left: `${SIDE_PADDING}px`,
-    width: `${width - SIDE_PADDING * 2}px`,
-    top: `${baselineY}px`,
+  const list = [];
+  selectedFacts.forEach((fact) => {
+    multipliers.forEach((multiplier) => {
+      list.push({
+        multiplier,
+        fact,
+        product: multiplier * fact,
+      });
+    });
   });
-  track.appendChild(baseline);
 
-  const leftArrow = createDiv("arrow arrow-left", { left: `${SIDE_PADDING - 2}px`, top: `${baselineY - 8}px` });
-  const rightArrow = createDiv("arrow arrow-right", { left: `${width - SIDE_PADDING - 14}px`, top: `${baselineY - 8}px` });
-  track.append(leftArrow, rightArrow);
-
-  for (let value = displayMin; value <= displayMax + EPSILON; value += minorStep) {
-    const normalizedValue = Math.round(value / minorStep) * minorStep;
-    const offset = ((normalizedValue - displayMin) / majorStep) * PIXELS_PER_MAJOR + SIDE_PADDING;
-    const majorIndex = (normalizedValue - displayMin) / majorStep;
-    const isMajorTick = Math.abs(majorIndex - Math.round(majorIndex)) < 1e-7;
-    const tick = createDiv(isMajorTick ? "tick major" : "tick minor", { left: `${offset}px` });
-    track.appendChild(tick);
-
-    if (isMajorTick) {
-      const isWithinLabelRange = normalizedValue >= minValue - EPSILON && normalizedValue <= maxValue + EPSILON;
-      if (isWithinLabelRange) {
-        const label = createDiv("label", { left: `${offset}px` }, formatNumber(normalizedValue));
-        track.appendChild(label);
-      }
-    }
-  }
-
-  const zeroInRange = displayMin <= 0 && displayMax >= 0;
-  if (zeroInRange) {
-    const zeroOffset = ((0 - displayMin) / majorStep) * PIXELS_PER_MAJOR + SIDE_PADDING;
-    const zeroMarker = createDiv("zero-marker", { left: `${zeroOffset}px` });
-    track.appendChild(zeroMarker);
-  }
-
-  statusEl.textContent = `Showing ${formatNumber(minValue)} to ${formatNumber(maxValue)} with major divisions of ${formatNumber(majorStep)} and minor ${divisionName(minorDivisions)}.`;
-
-  requestAnimationFrame(() => {
-    const startOffset = ((minValue - displayMin) / majorStep) * PIXELS_PER_MAJOR;
-    const centerTarget = Math.max(0, startOffset + SIDE_PADDING - viewport.clientWidth / 2);
-    viewport.scrollTo({ left: centerTarget, behavior: "smooth" });
-  });
+  return order === "random" ? shuffle(list) : list;
 }
 
-function handleSubmit(event) {
-  event.preventDefault();
+function stopTimer() {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
 
-  const start = Number(startInput.value);
-  const end = Number(endInput.value);
-  const majorStep = Number(majorStepInput.value);
-  const minorDivisions = Number(minorDivisionsSelect.value);
+function addRow(item) {
+  const tr = document.createElement("tr");
+  const countCell = document.createElement("td");
+  const equationCell = document.createElement("td");
 
-  if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(majorStep) || majorStep <= 0) {
-    statusEl.textContent = "Please enter valid numbers, and make sure the major division is greater than zero.";
+  countCell.textContent = String(index + 1);
+  equationCell.textContent = `${item.multiplier} × ${item.fact} = ${item.product}`;
+
+  tr.append(countCell, equationCell);
+  factsBody.appendChild(tr);
+  tr.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+function tick() {
+  if (index >= queue.length) {
+    stopTimer();
+    pauseBtn.textContent = "Pause";
+    isPaused = false;
+    statusEl.textContent = "Finished! Press Start to play again.";
     return;
   }
 
-  renderNumberLine(start, end, majorStep, minorDivisions);
+  const item = queue[index];
+  addRow(item);
+  index += 1;
+  statusEl.textContent = `Showing ${index} of ${queue.length}`;
 }
 
-form.addEventListener("submit", handleSubmit);
-renderNumberLine(Number(startInput.value), Number(endInput.value), Number(majorStepInput.value), Number(minorDivisionsSelect.value));
+function startPlayback() {
+  stopTimer();
+  factsBody.innerHTML = "";
+  index = 0;
+  isPaused = false;
+  pauseBtn.textContent = "Pause";
+  tick();
+  timer = setInterval(tick, speed);
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const selectedFacts = getSelectedFacts();
+  if (!selectedFacts.length) {
+    statusEl.textContent = "Please select at least one fact family from 1 to 12.";
+    stopTimer();
+    factsBody.innerHTML = "";
+    return;
+  }
+
+  speed = Math.max(150, Number(speedInput.value) || 900);
+  queue = buildQueue(selectedFacts, orderInput.value);
+
+  startPlayback();
+});
+
+pauseBtn.addEventListener("click", () => {
+  if (!queue.length) {
+    return;
+  }
+
+  if (!isPaused) {
+    stopTimer();
+    isPaused = true;
+    pauseBtn.textContent = "Resume";
+    statusEl.textContent = "Paused.";
+  } else {
+    isPaused = false;
+    pauseBtn.textContent = "Pause";
+    timer = setInterval(tick, speed);
+    statusEl.textContent = "Resumed.";
+  }
+});
+
+resetBtn.addEventListener("click", () => {
+  stopTimer();
+  queue = [];
+  index = 0;
+  isPaused = false;
+  pauseBtn.textContent = "Pause";
+  factsBody.innerHTML = "";
+  statusEl.textContent = "Reset complete. Select facts and press Start.";
+});
+
+buildCheckboxes();

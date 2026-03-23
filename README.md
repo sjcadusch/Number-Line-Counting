@@ -1,22 +1,22 @@
-# Configurable Number Line
+# Multiplication Facts Player
 
-This repository contains a single-page JavaScript app for rendering a configurable, scrollable number line.
+A classroom-friendly JavaScript page that displays multiplication facts one line at a time.
 
 ## Features
 
-- Set the visible labelled range with start and end numbers.
-- Choose the major division size.
-- Choose minor divisions in halves, fifths, or tenths.
-- Label only the major divisions that fall within the selected range.
-- Support negative numbers, zero, and positive numbers.
-- Extend the line by one major division past each end and finish with arrow heads.
-- Scroll horizontally when the rendered number line is wider than the screen.
-- Use a `#BCFCBF` page background.
+- Choose one or more **fact families from 1 to 12**.
+- Set the display **speed in milliseconds**.
+- Play facts in **forwards**, **backwards**, or **random** order.
+- Facts are rendered into a table one line at a time (for example: `0 × 2 = 0`, `1 × 2 = 2`, ... `12 × 2 = 24`).
+- Includes pause, resume, and reset controls.
+- Uses background color `#BCFCBF`.
 
 ## Run locally
+
+Open `index.html` directly in a browser, or serve this folder with any static file server:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000>.
+Then visit <http://localhost:8000>.

@@ -3,58 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configurable Number Line</title>
+    <title>Multiplication Facts Player</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app">
-      <header class="hero">
-        <h1>Configurable Number Line</h1>
-        <p class="subtitle">
-          Choose a start and end value, set the major division size, and pick minor divisions in halves,
-          fifths, or tenths. Only major division values are labelled, the line extends one major division
-          beyond each end, and you can scroll horizontally when the line is wider than the screen.
-        </p>
-      </header>
+      <h1>Multiplication Facts Player</h1>
+      <p class="subtitle">
+        Choose fact families (1–12), pick a display direction, and play equations one line at a time.
+      </p>
 
       <form id="controls" class="controls" autocomplete="off">
+        <fieldset class="fact-picker">
+          <legend>Fact Families</legend>
+          <div id="factCheckboxes" class="fact-grid"></div>
+        </fieldset>
+
         <label>
-          Start number
-          <input type="number" id="start" value="0" step="1" />
+          Display speed (ms)
+          <input type="number" id="speed" value="900" min="150" step="50" />
         </label>
 
         <label>
-          End number
-          <input type="number" id="end" value="10" step="1" />
-        </label>
-
-        <label>
-          Major division
-          <input type="number" id="majorStep" value="1" step="0.1" min="0.1" />
-        </label>
-
-        <label>
-          Minor divisions
-          <select id="minorDivisions">
-            <option value="2">Halves</option>
-            <option value="5">Fifths</option>
-            <option value="10" selected>Tenths</option>
+          Order
+          <select id="order">
+            <option value="forward">Forwards (0 to 12)</option>
+            <option value="backward">Backwards (12 to 0)</option>
+            <option value="random">Random</option>
           </select>
         </label>
 
         <div class="actions">
-          <button type="submit">Update number line</button>
+          <button type="submit">Start</button>
+          <button type="button" id="pause">Pause</button>
+          <button type="button" id="reset">Reset</button>
         </div>
       </form>
 
-      <section class="status-panel" aria-live="polite">
-        <p id="status">Showing 0 to 10 with major divisions of 1 and minor tenths.</p>
+      <section class="status-panel">
+        <p id="status">Select at least one fact family and press Start.</p>
       </section>
 
-      <section class="number-line-card">
-        <div id="viewport" class="viewport" aria-label="Scrollable number line">
-          <div id="track" class="track"></div>
-        </div>
+      <section class="table-wrap" aria-label="Multiplication facts output">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Equation</th>
+            </tr>
+          </thead>
+          <tbody id="factsBody"></tbody>
+        </table>
       </section>
     </main>
 
