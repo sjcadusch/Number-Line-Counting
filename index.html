@@ -3,57 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Multiplication Facts Player</title>
+    <title>Skip Counting Number Line</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app">
-      <h1>Multiplication Facts Player</h1>
+      <h1>Skip Counting Number Line</h1>
       <p class="subtitle">
-        Choose fact families (1–12), pick a display direction, and play equations one line at a time.
+        Set start/end values and a skip amount. Press <strong>Play</strong> to watch the line scroll while curved arrows show each jump.
       </p>
 
       <form id="controls" class="controls" autocomplete="off">
-        <fieldset class="fact-picker">
-          <legend>Fact Families</legend>
-          <div id="factCheckboxes" class="fact-grid"></div>
-        </fieldset>
-
         <label>
-          Display speed (ms)
-          <input type="number" id="speed" value="900" min="150" step="50" />
+          Start
+          <input type="number" id="start" value="0" step="1" />
         </label>
-
         <label>
-          Order
-          <select id="order">
-            <option value="forward">Forwards (0 to 12)</option>
-            <option value="backward">Backwards (12 to 0)</option>
-            <option value="random">Random</option>
-          </select>
+          End
+          <input type="number" id="end" value="48" step="1" />
         </label>
-
+        <label>
+          Skip By
+          <input type="number" id="step" value="4" step="1" min="1" />
+        </label>
+        <label>
+          Speed (ms)
+          <input type="number" id="speed" value="850" step="50" min="150" />
+        </label>
         <div class="actions">
-          <button type="submit">Start</button>
+          <button type="submit">Play</button>
           <button type="button" id="pause">Pause</button>
           <button type="button" id="reset">Reset</button>
         </div>
       </form>
 
       <section class="status-panel">
-        <p id="status">Select at least one fact family and press Start.</p>
+        <p id="status">Ready.</p>
       </section>
 
-      <section class="table-wrap" aria-label="Multiplication facts output">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Equation</th>
-            </tr>
-          </thead>
-          <tbody id="factsBody"></tbody>
-        </table>
+      <section id="viewport" class="viewport" aria-label="Animated number line">
+        <div id="track" class="track"></div>
+        <svg id="arrowLayer" class="arrow-layer" aria-hidden="true"></svg>
       </section>
     </main>
 

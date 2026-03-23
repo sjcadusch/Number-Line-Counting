@@ -1,22 +1,28 @@
-# Multiplication Facts Player
+# Classroom Math Activities
 
-A classroom-friendly JavaScript page that displays multiplication facts one line at a time.
+This repository is for the **Skip Counting Number Line** project.
 
-## Features
-
-- Choose one or more **fact families from 1 to 12**.
-- Set the display **speed in milliseconds**.
-- Play facts in **forwards**, **backwards**, or **random** order.
-- Facts are rendered into a table one line at a time (for example: `0 × 2 = 0`, `1 × 2 = 2`, ... `12 × 2 = 24`).
-- Includes pause, resume, and reset controls.
-- Uses background color `#BCFCBF`.
-
-## Run locally
-
-Open `index.html` directly in a browser, or serve this folder with any static file server:
+Files:
+- `index.html`
+- `script.js`
+- `styles.css`
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then visit <http://localhost:8000>.
+Then open <http://localhost:8000>.
+
+---
+
+## Separate Multiplication project
+
+Per request, the multiplication facts app is intended to live in its own repository:
+
+- <https://github.com/sjcadusch/Multiplication-Facts>
+
+A copy of the standalone files is currently available in `multiplication-facts/` for transfer:
+- `multiplication-facts/index.html`
+- `multiplication-facts/script.js`
+- `multiplication-facts/styles.css`
+- `multiplication-facts/README.md`
